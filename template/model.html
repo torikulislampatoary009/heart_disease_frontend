@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}How it works - Heart Check{% endblock %}
+{% block content %}
+<h1>How it works</h1>
+<p class="lead">Telling a sick patient they are healthy (a false negative) is the worst mistake here. So each model has a safety limit set to catch at least {{ ((info.target_recall or 0.95) * 100)|round|int }}% of sick patients in cross-validation. The cost is more false alarms. A patient is flagged if <strong>either</strong> model reaches its limit.</p>
+{% if error %}<p class="notice error">{{ error }}</p>{% endif %}
+{% if info and info.metrics %}
+<p class="hint">Trained on {{ info.rows }} patient records. Results below come from {{ info.metrics.test_rows }} records the models never saw while training.</p>
+{% set names = {'logistic_regression': 'Logistic Regression', 'svm': 'SVM', 'combined_either_model': 'Either model (used by the app)'} %}
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Model</th><th>Sick patients caught</th><th>Missed (false negatives)</th><th>False alarms</th><th>Healthy people cleared</th><th>ROC AUC</th></tr></thead>
+  <tbody>
+  {% for key, r in info.metrics.results.items() %}
+    {% set t = r.test_at_threshold %}
+    <tr>
+      <td>{{ names.get(key, key) }}</td>
+      <td>{{ ((t.recall_sensitivity or 0) * 100)|round(1) }}%</td>
+      <td>{{ t.false_negatives }}</td>
+      <td>{{ t.false_positives }}</td>
+      <td>{{ ((t.specificity or 0) * 100)|round(1) }}%</td>
+      <td>{{ r.test_roc_auc if r.test_roc_auc else '-' }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<p class="hint">The test set is small, so these numbers can move a lot with different data. Treat them as a guide, not a guarantee.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}History - Heart Check{% endblock %}
+{% block content %}
+<h1>History</h1>
+{% if stats %}<p class="lead">{{ stats.total }} saved checks, {{ stats.flagged }} flagged as higher risk.</p>{% endif %}
+{% if error %}<p class="notice error">{{ error }}</p>{% endif %}
+{% if data %}
+<div class="table-wrap">
+<table>
+  <thead><tr><th>When</th><th>Age</th><th>Sex</th><th>BP</th><th>Chol</th><th>Max HR</th><th>LogReg</th><th>SVM</th><th>Result</th><th></th></tr></thead>
+  <tbody>
+  {% for r in data["items"] %}
+    <tr>
+      <td>{{ r.created_at[:16].replace('T', ' ') }}</td><td>{{ r.age }}</td><td>{{ 'M' if r.sex == 1 else 'F' }}</td>
+      <td>{{ r.trestbps }}</td><td>{{ r.chol }}</td><td>{{ r.thalach }}</td>
+      <td>{{ r.prob_logreg|round(1) }}%</td><td>{{ r.prob_svm|round(1) }}%</td>
+      <td><span class="badge {{ 'high' if r.flagged else 'low' }}">{{ 'Higher risk' if r.flagged else 'Lower risk' }}</span></td>
+      <td><form method="post" action="{{ url_for('delete', rid=r.id) }}"><button class="btn danger" type="submit" aria-label="Delete record {{ r.id }}">Delete</button></form></td>
+    </tr>
+  {% else %}
+    <tr><td colspan="10" class="empty">Nothing saved yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<div class="pager">
+  {% if page > 1 %}<a class="btn secondary" href="{{ url_for('history', page=page-1) }}">Previous</a>{% endif %}
+  <span>Page {{ page }} of {{ pages }}</span>
+  {% if page < pages %}<a class="btn secondary" href="{{ url_for('history', page=page+1) }}">Next</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Result - Heart Check{% endblock %}
+{% block content %}
+{% set names = {'logistic_regression': 'Logistic Regression', 'svm': 'Support Vector Machine'} %}
+<section class="verdict {{ 'high' if r.flagged else 'low' }}" role="status">
+  {% if r.flagged %}
+    <h1>Higher risk. Please see a doctor.</h1>
+    <p>At least one model estimates a chance of heart disease above its safety limit.</p>
+  {% else %}
+    <h1>Lower risk in this screening</h1>
+    <p>Both models are below their safety limits. This does not rule out heart disease. If you have symptoms, see a doctor anyway.</p>
+  {% endif %}
+</section>
+
+<div class="cards">
+  {% for key, m in r.models.items() %}
+  <article class="card">
+    <h2>{{ names.get(key, key) }}</h2>
+    <p class="big">{{ m.probability }}%</p>
+    <div class="bar" aria-hidden="true">
+      <span class="fill {{ 'over' if m.flagged else '' }}" style="width: {{ m.probability }}%"></span>
+      <span class="mark" style="left: {{ m.threshold }}%"></span>
+    </div>
+    <p class="hint">Chance of heart disease. The line marks the safety limit ({{ m.threshold }}%). {{ 'Above the limit.' if m.flagged else 'Below the limit.' }}</p>
+  </article>
+  {% endfor %}
+</div>
+
+{% if r.save_error %}<p class="notice error">{{ r.save_error }}</p>{% elif r.saved %}<p class="hint">Saved to history (record #{{ r.record_id }}).</p>{% endif %}
+
+<h2>Values you entered</h2>
+<dl class="values">
+  {% for f in fields %}
+    <dt>{{ f.label }}</dt>
+    <dd>{% if f.options %}{% for val, text in f.options %}{% if val == r.inputs[f.name] %}{{ text }}{% endif %}{% endfor %}{% else %}{{ r.inputs[f.name] }}{% endif %}</dd>
+  {% endfor %}
+</dl>
+<a class="btn secondary" href="{{ url_for('index') }}">Check another patient</a>
+{% endblock %}
